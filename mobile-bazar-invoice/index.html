@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.dataTables.min.css" />
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         @media print {
             @page { 
@@ -131,6 +132,7 @@
                     <button type="button" onclick="newInvoice()" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded w-full">New Invoice</button>
                     <button type="button" onclick="document.getElementById('hiddenSubmit').click()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded w-full">Save Invoice</button>
                     <button type="button" onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded w-full">Print Now</button>
+                    <button type="button" onclick="downloadPdf()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded w-full">Download PDF</button>
                     <button type="button" onclick="openSendModal()" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded w-full">Send Invoice</button>
                     <button type="button" onclick="clearForm()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded w-full">Clear Form</button>
                     <button type="button" onclick="toggleHistory()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded w-full">History</button>
@@ -168,6 +170,8 @@
                                 <input type="text" name="address" class="mt-1 block w-full border rounded px-3 py-2" required />
                                 <label class="block text-sm font-medium text-gray-700 mt-3">Contact No.:</label>
                                 <input type="text" name="contact" class="mt-1 block w-full border rounded px-3 py-2" required />
+                                <label class="block text-sm font-medium text-gray-700 mt-3">Alternative Contact No. (optional):</label>
+                                <input type="text" name="altContact" id="altContact" class="mt-1 block w-full border rounded px-3 py-2" />
                             </div>
                             <div class="w-full sm:w-1/2">
                                 <label class="block text-sm font-medium text-gray-700">Date:</label>
@@ -230,7 +234,7 @@
                                     <tr>
                                         <td class="border border-gray-300 p-2">
                                             IMEI No. 2:
-                                            <input type="text" name="imei2" class="mt-1 block w-full border rounded px-2 py-1" required />
+                                            <input type="text" name="imei2" class="mt-1 block w-full border rounded px-2 py-1" />
                                         </td>
                                         <td class="border border-gray-300 p-2"></td>
                                         <td class="border border-gray-300 p-2"></td>

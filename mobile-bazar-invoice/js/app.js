@@ -993,6 +993,7 @@ function collectInvoiceData() {
         name: document.querySelector('input[name="name"]').value,
         address: document.querySelector('input[name="address"]').value,
         contact: document.querySelector('input[name="contact"]').value,
+        altContact: (document.getElementById("altContact") ? document.getElementById("altContact").value : ""),
         setName: document.getElementById("setNameDropdown").value,
         variant: document.getElementById("variantDropdown").value,
         modelNo: document.querySelector('input[name="modelNo"]').value,
@@ -1005,6 +1006,207 @@ function collectInvoiceData() {
         sgst: document.getElementById("sgstField").value,
         grandTotal: document.getElementById("grandTotalDisplay").textContent
     };
+}
+
+// ========================================
+// DOWNLOAD PDF (Client-side) using provided template
+// ========================================
+function buildInvoicePdfHtml(invoice) {
+    var qty = parseFloat(invoice.qty || 0) || 0;
+    var rate = parseFloat(invoice.rate || 0) || 0;
+    var baseAmount = parseFloat((invoice.baseAmount || '').toString().replace(/,/g, ''));
+    if (isNaN(baseAmount)) {
+        baseAmount = qty * rate;
+    }
+    var cgstPct = parseFloat(invoice.cgst || 0) || 0;
+    var sgstPct = parseFloat(invoice.sgst || 0) || 0;
+    var cgstAmt = baseAmount * (cgstPct / 100);
+    var sgstAmt = baseAmount * (sgstPct / 100);
+    var grandTotal = parseFloat((invoice.grandTotal || '').toString().replace(/,/g, ''));
+    if (isNaN(grandTotal)) {
+        grandTotal = baseAmount + cgstAmt + sgstAmt;
+    }
+    var altContactHtml = invoice.altContact ? `
+        <div class="detail-row">
+            <div class="detail-label">Alt Contact No.:</div>
+            <div class="detail-value">${invoice.altContact}</div>
+        </div>
+    ` : '';
+
+    var imei2Value = (invoice.imei2 && invoice.imei2.trim().length > 0) ? invoice.imei2 : 'N/A';
+
+    return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; padding: 20px; color: #333; background: white; }
+        .invoice-container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; }
+        .header { background: linear-gradient(to right, #2563eb, #4f46e5); color: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .header p { margin: 3px 0; font-size: 14px; }
+        .details-section { display: table; width: 100%; margin-bottom: 30px; }
+        .details-left, .details-right { display: table-cell; width: 50%; vertical-align: top; padding: 10px; }
+        .detail-row { margin-bottom: 15px; }
+        .detail-label { font-weight: bold; color: #555; font-size: 13px; margin-bottom: 5px; }
+        .detail-value { font-size: 14px; color: #333; }
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        .items-table th { background-color: #dbeafe; color: #1e40af; padding: 12px; text-align: left; border: 1px solid #cbd5e1; font-size: 14px; }
+        .items-table td { padding: 12px; border: 1px solid #cbd5e1; font-size: 13px; }
+        .items-table tr:nth-child(even) { background-color: #f9fafb; }
+        .totals-section { margin-bottom: 30px; padding: 20px; background-color: #f3f4f6; border-radius: 5px; }
+        .total-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
+        .total-row.grand { font-size: 18px; font-weight: bold; color: #1e40af; margin-top: 15px; padding-top: 15px; border-top: 2px solid #cbd5e1; }
+        .terms-section { margin-bottom: 30px; padding: 15px; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; }
+        .terms-section h3 { font-size: 14px; margin-bottom: 10px; color: #92400e; }
+        .terms-section ul { margin-left: 20px; font-size: 12px; color: #78350f; }
+        .terms-section li { margin-bottom: 5px; }
+        .signature-section { text-align: right; margin-top: 50px; }
+        .signature-section p { font-size: 13px; margin-bottom: 5px; }
+        .signature-line { display: inline-block; width: 200px; border-top: 1px solid #333; margin-top: 40px; }
+        @media print { body { padding: 0; } .invoice-container { padding: 15px; } }
+    </style>
+    <title>Invoice ${invoice.invoiceNo}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    </head>
+<body>
+    <div class="invoice-container">
+        <div class="header">
+            <h1>MOBILE BAZAR NATNA</h1>
+            <p>Address: Natna</p>
+            <p>GSTIN: 09CEOPS1586K1ZL</p>
+        </div>
+        <div class="details-section">
+            <div class="details-left">
+                <div class="detail-row">
+                    <div class="detail-label">Customer Name:</div>
+                    <div class="detail-value">${invoice.name || ''}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Address:</div>
+                    <div class="detail-value">${invoice.address || ''}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Contact No.:</div>
+                    <div class="detail-value">${invoice.contact || ''}</div>
+                </div>
+                ${altContactHtml}
+            </div>
+            <div class="details-right">
+                <div class="detail-row">
+                    <div class="detail-label">Invoice No.:</div>
+                    <div class="detail-value">${invoice.invoiceNo || ''}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Date:</div>
+                    <div class="detail-value">${invoice.date || ''}</div>
+                </div>
+            </div>
+        </div>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Description Of Goods</th>
+                    <th style="width: 80px;">Qty.</th>
+                    <th style="width: 100px;">Rate</th>
+                    <th style="width: 120px;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <strong>Set Name:</strong> ${invoice.setName || ''}<br>
+                        <strong>Variant:</strong> ${invoice.variant || ''}
+                    </td>
+                    <td>${qty}</td>
+                    <td>₹${rate.toFixed(2)}</td>
+                    <td><strong>₹${baseAmount.toFixed(2)}</strong></td>
+                </tr>
+                <tr>
+                    <td colspan="4">
+                        <strong>Model No.:</strong> ${invoice.modelNo ? invoice.modelNo : 'N/A'}
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="4">
+                        <strong>IMEI No. 1:</strong> ${invoice.imei1 || ''}
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="4">
+                        <strong>IMEI No. 2:</strong> ${imei2Value}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="totals-section">
+            <div class="total-row">
+                <span>Total Amount:</span>
+                <span><strong>₹${baseAmount.toFixed(2)}</strong></span>
+            </div>
+            <div class="total-row">
+                <span>Add: CGST @ ${cgstPct}%</span>
+                <span>₹${cgstAmt.toFixed(2)}</span>
+            </div>
+            <div class="total-row">
+                <span>Add: SGST @ ${sgstPct}%</span>
+                <span>₹${sgstAmt.toFixed(2)}</span>
+            </div>
+            <div class="total-row grand">
+                <span>GRAND TOTAL:</span>
+                <span>₹${grandTotal.toFixed(2)}</span>
+            </div>
+        </div>
+        <div class="terms-section">
+            <h3>E & O.E - TERMS & CONDITIONS:</h3>
+            <ul>
+                <li>All Subject to Kaushambi Jurisdiction</li>
+                <li>Goods once sold will not be taken back</li>
+                <li>Will be valid as per the service center.</li>
+                <li>Opened goods will not be returned or exchanged.</li>
+                <li>Broken and open boxes will not be returned.</li>
+                <li>For warranty-related complaints, please contact the service center directly.</li>
+            </ul>
+        </div>
+        <div class="signature-section">
+            <p>For: MOBILE BAZAR NATNA</p>
+            <div class="signature-line"></div>
+            <p>Authorized Signature</p>
+        </div>
+    </div>
+</body>
+</html>`;
+}
+
+async function downloadPdf() {
+    try {
+        var invoice = collectInvoiceData();
+        var html = buildInvoicePdfHtml(invoice);
+        var container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.left = '-9999px';
+        container.style.top = '0';
+        container.innerHTML = html;
+        document.body.appendChild(container);
+        const opt = {
+            margin:       [10, 10, 10, 10],
+            filename:     `Invoice_${invoice.invoiceNo || 'invoice'}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        await html2pdf().set(opt).from(container).save();
+    } catch (err) {
+        Swal.fire('Error', 'Failed to generate PDF: ' + err.message, 'error');
+    } finally {
+        var tempDivs = document.querySelectorAll('body > div');
+        tempDivs.forEach(function(div) {
+            if (div && div.style && div.style.left === '-9999px') {
+                div.remove();
+            }
+        });
+    }
 }
 
 // ========================================
